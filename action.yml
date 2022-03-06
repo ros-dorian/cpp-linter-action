@@ -24,9 +24,9 @@ inputs:
   tidy-checks:
     description: >
       A string of regex-like patterns specifying what checks clang-tidy will use.
-      This defaults to 'boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-*,cppcoreguidelines-*'. See also clang-tidy docs for more info.
+      The default uses the checks defined in `.clang-tidy`. See also clang-tidy docs for more info.
     required: false
-    default: "boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,clang-analyzer-*,cppcoreguidelines-*"
+    default: ""
   repo-root:
     description: >
       The relative path to the repository root directory. The default value '.' is relative to the runner's GITHUB_WORKSPACE environment variable.
