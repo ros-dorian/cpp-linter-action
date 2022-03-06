@@ -605,6 +605,7 @@ def post_pr_comment(base_url: str, user_id: int) -> bool:
         A bool describing if the linter checks passed. This is used as the action's
         output value (a soft exit code).
     """
+    print(Globals.EVENT_PAYLOAD)
     comments_url = base_url + f'issues/{Globals.EVENT_PAYLOAD["number"]}/comments'
     remove_bot_comments(comments_url, user_id)
     payload = ""
