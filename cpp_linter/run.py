@@ -394,7 +394,8 @@ def run_clang_tidy(
     if len(include_dirs) > 0:
         cmds.append("--")
         for p in include_dirs:
-            cmds.append(f"-I{p}")
+            path = p.replace("/", os.sep)
+            cmds.append(f"-I{path}")
     with open("clang_tidy_output.yml", "wb"):
         pass  # clear yml file's content before running clang-tidy
     logger.info('Running "%s"', " ".join(cmds))
