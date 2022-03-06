@@ -96,5 +96,5 @@ runs:
     - --thread-comments=${{ inputs.thread-comments }}
     - --ignore
     - ${{ inputs.ignore }}
-    - --includes-dirs
+    - --include-dirs
     - ${{ inputs.include-dirs }}
