@@ -66,6 +66,18 @@ inputs:
       - Glob patterns are not supported here. All asterick characters ('*') are literal.
     required: false
     default: ".github"
+  include-dirs:
+    description: >
+      Set this option with string of path(s) to include to Clang's search path. Defaults to '.'.
+
+      - In the case of multiple paths, you can use a pipe character ('|')
+        to separate the multiple paths. Multiple lines are forbidden as input to this option.
+      - There is no need to use './' for each entry; a blank string ('') represents
+        the repo-root path (specified by the `repo-root` input option).
+      - Path(s) containing a space should be inside single quotes.
+      - Glob patterns are not supported here. All asterick characters ('*') are literal.
+    required: false
+    default: "."
 outputs:
   checks-failed:
     description: An integer that can be used as a boolean value to indicate if all checks failed.
@@ -84,3 +96,5 @@ runs:
     - --thread-comments=${{ inputs.thread-comments }}
     - --ignore
     - ${{ inputs.ignore }}
+    - --includes-dirs
+    - ${{ inputs.include-dirs }}

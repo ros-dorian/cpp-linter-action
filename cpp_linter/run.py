@@ -116,6 +116,14 @@ cli_arg_parser.add_argument(
     help="Set this option to false to disable the use of thread comments as feedback."
     "Defaults to %(default)s.",
 )
+cli_arg_parser.add_argument(
+    "-I",
+    "--include_dirs",
+    nargs="?",
+    help="Set this option with paths to include to Clang's search path. "
+    "In the case of multiple paths, you can set this option (multiple times) "
+    "for each path.",
+)
 
 
 def set_exit_code(override: int = None) -> int:
@@ -354,7 +362,7 @@ def list_source_files(ext_list: list, ignored_paths: list, not_ignored: list) ->
 
 
 def run_clang_tidy(
-    filename: str, file_obj: dict, version: str, checks: str, lines_changed_only: bool
+    filename: str, file_obj: dict, version: str, checks: str, lines_changed_only: bool, include_dirs: list
 ) -> None:
     """Run clang-tidy on a certain file.
 
@@ -366,6 +374,7 @@ def run_clang_tidy(
             the desired clang-tidy checks to be enabled/configured.
         lines_changed_only: A flag that forces focus on only changes in the event's
             diff info.
+        include_dirs: The list of paths to add to Clang's search paths.
     """
     if checks == "-*":  # if all checks are disabled, then clang-tidy is skipped
         # clear the clang-tidy output file and exit function
@@ -382,6 +391,10 @@ def run_clang_tidy(
         logger.info("line_filter = %s", json.dumps(file_obj["line_filter"]["lines"]))
         cmds.append(f"--line-filter={json.dumps([file_obj['line_filter']])}")
     cmds.append(filename.replace("/", os.sep))
+    if len(include_dirs) > 0:
+        cmds.append("--")
+        for p in include_dirs:
+            cmds.append(f"-I{p}")
     with open("clang_tidy_output.yml", "wb"):
         pass  # clear yml file's content before running clang-tidy
     logger.info('Running "%s"', " ".join(cmds))
@@ -431,7 +444,7 @@ def run_clang_format(
 
 
 def capture_clang_tools_output(
-    version: str, checks: str, style: str, lines_changed_only: bool
+    version: str, checks: str, style: str, lines_changed_only: bool, include_dirs: list
 ):
     """Execute and capture all output from clang-tidy and clang-format. This aggregates
     results in the [`OUTPUT`][cpp_linter.__init__.Globals.OUTPUT].
@@ -444,6 +457,7 @@ def capture_clang_tools_output(
             use the relative-most .clang-format configuration file.
         lines_changed_only: A flag that forces focus on only changes in the event's
             diff info.
+        include_dirs: The list of paths to add to Clang's search paths.
     """
     tidy_notes = []  # temporary cache of parsed notifications for use in log commands
     for file in (
@@ -455,7 +469,7 @@ def capture_clang_tools_output(
         if not os.path.exists(file["filename"]):
             filename = os.path.split(file["raw_url"])[1]
         start_log_group(f"Performing checkup on {filename}")
-        run_clang_tidy(filename, file, version, checks, lines_changed_only)
+        run_clang_tidy(filename, file, version, checks, lines_changed_only, include_dirs)
         run_clang_format(filename, file, version, style, lines_changed_only)
         end_log_group()
         if os.path.getsize("clang_tidy_report.txt"):
@@ -605,7 +619,6 @@ def post_pr_comment(base_url: str, user_id: int) -> bool:
         A bool describing if the linter checks passed. This is used as the action's
         output value (a soft exit code).
     """
-    print(Globals.EVENT_PAYLOAD)
     comments_url = base_url + f'issues/{Globals.EVENT_PAYLOAD["number"]}/comments'
     remove_bot_comments(comments_url, user_id)
     payload = ""
@@ -705,6 +718,22 @@ def parse_ignore_option(paths: str):
         )
     return (ignored, not_ignored)
 
+def parse_include_directories(paths: str):
+    """Parse a given string of paths (separated by a '|') into a list of strings
+
+    Args:
+        paths: This arguments conforms to the CLI arg `--include-dirs` (or `-I`).
+
+    Returns:
+        A list of strings.
+    """
+    paths = paths.split("|")
+    if paths:
+        logger.info(
+            "Including the following paths:\n\t./%s",
+            "\n\t./".join(p for p in paths),
+        )
+    return paths
 
 def main():
     """The main script."""
@@ -717,6 +746,9 @@ def main():
 
     # prepare ignored paths list
     ignored, not_ignored = parse_ignore_option("" if not args.ignore else args.ignore)
+
+    # prepare include paths list
+    include_paths = parse_include_directories("" if not args.include_dirs else args.include_dirs)
 
     # prepare extensions list
     args.extensions = args.extensions.split(",")
@@ -751,7 +783,7 @@ def main():
         sys.exit(set_exit_code(0))
 
     capture_clang_tools_output(
-        args.version, args.tidy_checks, args.style, args.lines_changed_only
+        args.version, args.tidy_checks, args.style, args.lines_changed_only, include_paths
     )
 
     start_log_group("Posting comment(s)")
