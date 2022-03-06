@@ -118,7 +118,7 @@ cli_arg_parser.add_argument(
 )
 cli_arg_parser.add_argument(
     "-I",
-    "--include_dirs",
+    "--include-dirs",
     nargs="?",
     help="Set this option with paths to include to Clang's search path. "
     "In the case of multiple paths, you can set this option (multiple times) "
