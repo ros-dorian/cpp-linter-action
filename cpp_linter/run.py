@@ -60,8 +60,7 @@ cli_arg_parser.add_argument(
 cli_arg_parser.add_argument(
     "-c",
     "--tidy-checks",
-    default="boost-*,bugprone-*,performance-*,readability-*,portability-*,modernize-*,"
-    "clang-analyzer-*,cppcoreguidelines-*",
+    default="",
     help="A string of regex-like patterns specifying what checks clang-tidy will use. "
     "This defaults to %(default)s. See also clang-tidy docs for more info.",
 )
@@ -383,7 +382,7 @@ def run_clang_tidy(
     cmds = [f"clang-tidy-{version}"]
     if sys.platform.startswith("win32"):
         cmds = ["clang-tidy"]
-    if checks:
+    if not checks == "":
         cmds.append(f"-checks={checks}")
     cmds.append("--export-fixes=clang_tidy_output.yml")
     # cmds.append(f"--format-style={style}")
